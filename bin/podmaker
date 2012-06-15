@@ -1,0 +1,28 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+BEGIN {
+    use File::Basename ();
+    use File::Spec;
+    use Cwd ();
+    unshift @INC,
+      File::Spec->catfile(File::Basename::dirname(Cwd::realpath(__FILE__)),
+        '../lib');
+}
+
+use IO::Interactive qw(is_interactive);
+use App::Podmaker;
+
+my $podmaker = App::Podmaker->new;
+
+if (is_interactive()) {
+    my ($file) = @ARGV;
+    die 'Usage: program <file>' unless $file && -f $file;
+
+    $podmaker->process(input => $file, output => \*STDOUT);
+}
+else {
+    $podmaker->process(input => \*STDIN, output => \*STDOUT);
+}
