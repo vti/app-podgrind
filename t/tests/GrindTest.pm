@@ -1,4 +1,4 @@
-package MakerTest;
+package GrindTest;
 
 use strict;
 use warnings;
@@ -9,12 +9,12 @@ use Test::More;
 use Test::Fatal;
 use Test::Differences;
 
-use App::Podmaker;
+use App::Podgrind;
 
 sub create_pod : Test {
     my $self = shift;
 
-    my $maker = $self->_build_maker;
+    my $grind = $self->_build_grind;
 
     my $input = <<'EOF';
 package Foo;
@@ -27,7 +27,7 @@ sub _private {}
 EOF
 
     my $output = '';
-    $maker->process(input => \$input, output => \$output);
+    $grind->process(input => \$input, output => \$output);
 
     eq_or_diff($output, <<'EOF');
 package Foo;
@@ -73,7 +73,7 @@ EOF
 sub update_pod_methods : Test {
     my $self = shift;
 
-    my $maker = $self->_build_maker;
+    my $grind = $self->_build_grind;
 
     my $input = <<'EOF';
 package Foo;
@@ -105,7 +105,7 @@ Old description
 EOF
 
     my $output = '';
-    $maker->process(input => \$input, output => \$output);
+    $grind->process(input => \$input, output => \$output);
 
     my ($methods) = $output =~ m/(=head1 METHODS.*?)=head1/ms;
 
@@ -123,10 +123,10 @@ Old description
 EOF
 }
 
-sub _build_maker {
+sub _build_grind {
     my $self = shift;
 
-    return App::Podmaker->new(
+    return App::Podgrind->new(
         config => {author => 'Foo', email => 'foo@bar.com'},
         @_
     );

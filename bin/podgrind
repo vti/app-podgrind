@@ -1,0 +1,39 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+BEGIN {
+    use File::Basename ();
+    use File::Spec;
+    use Cwd ();
+    unshift @INC,
+      File::Spec->catfile(File::Basename::dirname(Cwd::realpath(__FILE__)),
+        '../lib');
+}
+
+use Getopt::Long;
+use Pod::Usage;
+
+use App::Podgrind;
+
+my $inplace;
+my $backup;
+my $prune;
+my $help;
+
+GetOptions(
+    "inplace" => \$inplace,
+    "backup"  => \$backup,
+    "prune"   => \$prune,
+    "help|?"  => \$help
+) or pod2usage(2);
+
+pod2usage(1) if $help;
+
+my $podgrind =
+  App::Podgrind->new(inplace => $inplace, backup => $backup, prune => $prune);
+
+my ($input, $output) = @ARGV;
+
+$podgrind->process(input => $input, output => $output);
