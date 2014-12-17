@@ -59,6 +59,40 @@ subtest 'fixes year loosly' => sub {
     like $renderer->render, qr/2010-2014/;
 };
 
+subtest 'renderes methods' => sub {
+    my $renderer = _build_renderer(
+        methods => [
+            {
+                name    => 'foo',
+                argv => []
+            },
+            {
+                name    => 'bar',
+                argv => [qw/$in/]
+            },
+            {
+                name    => 'commented',
+                argv => [],
+                comment => 'Not a good method'
+            }
+        ]
+    );
+
+    my ($methods) = $renderer->render =~ m/(=head1 METHODS.*?)=head1/ms;
+    eq_or_diff $methods, <<'EOF';
+=head1 METHODS
+
+=head2 C<foo>
+
+=head2 C<bar($in)>
+
+=head2 C<commented>
+
+Not a good method
+
+EOF
+};
+
 done_testing;
 
 sub _build_renderer {

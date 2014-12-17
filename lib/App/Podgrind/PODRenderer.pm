@@ -172,6 +172,8 @@ sub _render_methods {
 =head2 C<$method->{name}$argv>
 
 EOF
+        $pod .= $method->{comment} . "\n\n" if $method->{comment};
+
         my ($old_method) =
           grep { $_->{method} eq $method->{name} } @old_methods;
         if ($old_method) {

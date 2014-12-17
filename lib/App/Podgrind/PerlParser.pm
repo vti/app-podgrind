@@ -84,6 +84,15 @@ sub get_public_methods {
         my $stmt =
           $public->find(sub { $_[1]->isa('PPI::Statement::Variable') }) || [];
 
+        my @comment;
+        my $sib = $public->previous_sibling;
+        while ($sib && $sib->isa('PPI::Token::Comment')) {
+            push @comment, $sib->content;
+            $sib = $sib->previous_sibling;
+        }
+        my $comment = join ' ',
+          map { s/^#\s*//; s/\s*$//; $_ } reverse @comment;
+
         my ($unpack) = grep {
             $_->find(
                 sub {
@@ -97,17 +106,19 @@ sub get_public_methods {
         if ($unpack) {
             my $list =
               $unpack->find(sub { $_[1]->isa('PPI::Structure::List') });
-              if ($list) {
+            if ($list) {
                 my $symbols =
                   $list->[0]->find(sub { $_[1]->isa('PPI::Token::Symbol') });
-                @argv = grep { $_ ne '$self' } map { $_->content } @$symbols if $symbols;
+                @argv = grep { $_ ne '$self' } map { $_->content } @$symbols
+                  if $symbols;
             }
         }
 
         push @$result,
           {
-            name => $public->name,
-            argv => \@argv
+            name    => $public->name,
+            comment => $comment,
+            argv    => \@argv
           };
     }
 

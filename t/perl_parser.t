@@ -17,6 +17,8 @@ sub new {
     return $self;
 }
 
+# This is a commented method
+# multiline
 sub bar {
     my $self = shift;
     my ($foo, $bar) = @_;
@@ -49,14 +51,19 @@ EOF
     is_deeply $isa, ['ParentClass'];
 
     my $inherited_methods = $parser->get_inherited_methods;
-    is_deeply $inherited_methods, [{name => 'inherited', argv => []}];
+    is_deeply $inherited_methods,
+      [{name => 'inherited', argv => [], comment => ''}];
 
     my $methods = $parser->get_public_methods;
     is_deeply $methods,
       [
-        {name => 'new', argv => []},
-        {name => 'bar', argv => [qw/$foo $bar/]},
-        {name => 'baz', argv => [qw/$one/]},
+        {name => 'new', argv => [], comment => ''},
+        {
+            name    => 'bar',
+            argv    => [qw/$foo $bar/],
+            comment => 'This is a commented method multiline'
+        },
+        {name => 'baz', argv => [qw/$one/], comment => ''},
       ];
 
     my $pod = $parser->get_pod_tree;
