@@ -68,6 +68,50 @@ sub get_public_methods {
     my $methods =
       $self->{document}
       ->find(sub { $_[1]->isa('PPI::Statement::Sub') and $_[1]->name });
+    return [] unless $methods && @$methods;
+    return [grep { !m/^_/ } map { $_->name } @$methods];
+}
+
+sub get_isa {
+    my $self = shift;
+
+    my @isa;
+    my $includes = $self->{document}->find('Statement::Include') || [];
+    for my $node (@$includes) {
+        next if grep { $_ eq $node->module } qw{ lib };
+
+        if (grep { $_ eq $node->module } qw{ base parent }) {
+
+            my @meat = grep {
+                     $_->isa('PPI::Token::QuoteLike::Words')
+                  || $_->isa('PPI::Token::Quote')
+            } $node->arguments;
+
+            foreach my $token (@meat) {
+                if (   $token->isa('PPI::Token::QuoteLike::Words')
+                    || $token->isa('PPI::Token::Number'))
+                {
+                    push @isa, $token->literal;
+                }
+                else {
+                    next if $token->content =~ m/^base|parent$/;
+                    push @isa, $token->string;
+                }
+            }
+            next;
+        }
+    }
+
+    return \@isa;
+}
+
+sub get_inherited_methods {
+    my $self = shift;
+
+    my $methods =
+      $self->{document}
+      ->find(sub { $_[1]->isa('PPI::Statement::Sub') and $_[1]->name });
+    return [] unless $methods && @$methods;
     return [grep { !m/^_/ } map { $_->name } @$methods];
 }
 

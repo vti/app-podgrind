@@ -34,6 +34,9 @@ pod2usage(1) if $help;
 my $podgrind =
   App::Podgrind->new(inplace => $inplace, backup => $backup, prune => $prune);
 
-my ($input, $output) = @ARGV;
+my (@input) = @ARGV;
 
-$podgrind->process(input => $input, output => $output);
+for my $input (@input) {
+    warn "processing '$input'...\n";
+    $podgrind->process(input => $input);
+}

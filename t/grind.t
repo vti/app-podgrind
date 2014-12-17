@@ -1,9 +1,5 @@
-package GrindTest;
-
 use strict;
 use warnings;
-
-use base 'TestBase';
 
 use Test::More;
 use Test::Fatal;
@@ -11,10 +7,8 @@ use Test::Differences;
 
 use App::Podgrind;
 
-sub create_pod : Test {
-    my $self = shift;
-
-    my $grind = $self->_build_grind;
+subtest 'creates pod from nothing' => sub {
+    my $grind = _build_grind();
 
     my $input = <<'EOF';
 package Foo;
@@ -56,11 +50,10 @@ Foo, C<foo@bar.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2012, Foo.
+Copyright (C) 2014, Foo.
 
-This module is free software; you can redistribute it and/or modify it under the
-same terms as Perl 5.10.0. For more details, see the full text of the licenses
-in the directory LICENSES.
+This program is free software, you can redistribute it and/or modify it under
+the terms of the Artistic License version 2.0.
 
 This program is distributed in the hope that it will be useful, but without any
 warranty; without even the implied warranty of merchantability or fitness for
@@ -68,12 +61,10 @@ a particular purpose.
 
 =cut
 EOF
-}
+};
 
-sub update_pod_methods : Test {
-    my $self = shift;
-
-    my $grind = $self->_build_grind;
+subtest 'updates existing pod' => sub {
+    my $grind = _build_grind();
 
     my $input = <<'EOF';
 package Foo;
@@ -121,15 +112,13 @@ Old description
 =head2 C<method2>
 
 EOF
-}
+};
+
+done_testing;
 
 sub _build_grind {
-    my $self = shift;
-
-    return App::Podgrind->new(
+    App::Podgrind->new(
         config => {author => 'Foo', email => 'foo@bar.com'},
         @_
     );
 }
-
-1;

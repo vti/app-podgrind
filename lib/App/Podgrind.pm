@@ -45,6 +45,7 @@ sub process {
         my $renderer = App::Podgrind::PODRenderer->new(
             package => $parser->get_package_name,
             methods => $parser->get_public_methods,
+            isa     => $parser->get_isa,
             pod     => $parser->get_pod_tree,
             author  => $self->{config}->{author},
             email   => $self->{config}->{email},
@@ -79,8 +80,10 @@ sub process {
 sub _read_config_file {
     my $self = shift;
 
-    my $file = File::Spec->catfile($ENV{HOME}, '.podgrind');
-    return {} unless -f $file;
+    my $file = File::Spec->catfile('.podgrindrc');
+    $file = File::Spec->catfile($ENV{HOME}, '.podgrindrc') unless -e $file;
+
+    return {} unless -e $file;
 
     my $config = {};
 
@@ -96,6 +99,20 @@ sub _read_config_file {
         for ($key, $value) {
             s{^\s*}{};
             s{\s*$}{};
+        }
+
+        if (my ($heredoc) = $value =~ m/^<<(.*)$/) {
+            $value = '';
+            while (defined(my $line = <$fh>)) {
+                chomp $line;
+
+                if ($line =~ /^$heredoc/) {
+                    last;
+                }
+                else {
+                    $value .= $line . "\n";
+                }
+            }
         }
 
         $config->{$key} = $value;

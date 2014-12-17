@@ -34,7 +34,7 @@ WriteMakefile(
             },
         )
     ),
-    EXE_FILES => ['bin/tlsme'],
+    EXE_FILES => ['bin/podgrind'],
 
     PREREQ_PM => {
         'Cwd'            => 0,
@@ -46,7 +46,6 @@ WriteMakefile(
 
         'Pod::Usage'      => 0,
         'PPI'             => 0,
-        'Test::Class'     => 0,
         'Test::Fatal'     => 0,
         'Test::More'      => 0,
     },
