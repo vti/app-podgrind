@@ -5,9 +5,19 @@ use warnings;
 
 sub new {
     my $class = shift;
+    my (%params) = @_;
 
-    my $self = {@_};
+    my $self = {};
     bless $self, $class;
+
+    $self->{package}           = $params{package};
+    $self->{methods}           = $params{methods};
+    $self->{inherited_methods} = $params{inherited_methods};
+    $self->{isa}               = $params{isa};
+    $self->{pod}               = $params{pod};
+    $self->{author}            = $params{author};
+    $self->{email}             = $params{email};
+    $self->{license}           = $params{license};
 
     return $self;
 }
@@ -19,7 +29,8 @@ sub render {
     my $sections = $self->{pod};
 
     if (!grep { $_->{name} eq 'NAME' } @$sections) {
-        unshift @$sections, {name => 'NAME'};
+        unshift @$sections,
+          {name => 'NAME', content => $self->_render_package_name};
     }
 
     if (!grep { $_->{name} eq 'COPYRIGHT AND LICENSE' } @$sections) {
@@ -42,16 +53,23 @@ sub render {
         }
     }
 
-    if (!grep { $_->{name} eq 'ISA' } @$sections) {
-            $self->_insert_section_before('METHODS',
-                {name => 'ISA', content => ''});
+    if (@{$self->{isa} || []} && !grep { $_->{name} eq 'ISA' } @$sections) {
+        $self->_insert_section_before('METHODS',
+            {name => 'ISA', content => ''});
+
+        if (!grep { $_->{name} eq 'INHERITED METHODS' } @$sections) {
+            $self->_insert_section_after('METHODS',
+                {name => 'INHERITED METHODS'});
+        }
     }
 
     my $pod = "=pod\n\n";
 
     foreach my $section (@$sections) {
+        $pod .= '=head1 ' . $section->{name} . "\n\n";
+
         if ($section->{name} eq 'NAME') {
-            $pod .= $self->_render_package_name;
+            $pod .= $section->{content};
         }
         elsif ($section->{name} eq 'ISA') {
             $pod .= $self->_render_isa;
@@ -59,16 +77,16 @@ sub render {
         elsif ($section->{name} eq 'METHODS') {
             $pod .= $self->_render_methods;
         }
+        elsif ($section->{name} eq 'INHERITED METHODS') {
+            $pod .= $self->_render_inherited_methods;
+        }
         elsif ($section->{name} eq 'AUTHOR') {
-            $pod .= '=head1 ' . $section->{name} . "\n";
             $pod .= $self->_render_author;
         }
         elsif ($section->{name} eq 'COPYRIGHT AND LICENSE') {
-            $pod .= '=head1 ' . $section->{name} . "\n";
             $pod .= $self->_render_license;
         }
         else {
-            $pod .= '=head1 ' . $section->{name};
             $pod .= $section->{content};
         }
     }
@@ -84,8 +102,6 @@ sub _render_package_name {
     my $module = $self->{package};
 
     return <<"EOF";
-=head1 NAME
-
 $module - Module
 
 EOF
@@ -98,10 +114,6 @@ sub _render_isa {
     return '' unless @isa;
 
     my $pod = '';
-    $pod .= <<'EOF';
-=head1 ISA
-
-EOF
 
     $pod .= join ', ', map { "L<$_>" } @isa;
 
@@ -116,13 +128,9 @@ sub _render_methods {
     my @methods = @{$self->{methods} || []};
 
     my $pod = '';
-    $pod .= <<'EOF';
-=head1 METHODS
 
-EOF
-
-    if (grep { $_ eq 'new' } @methods) {
-        @methods = ('new', grep { $_ ne 'new' } @methods);
+    if (grep { $_->{name} eq 'new' } @methods) {
+        @methods = ({name => 'new'}, grep { $_->{name} ne 'new' } @methods);
     }
 
     my @old_methods;
@@ -141,15 +149,47 @@ EOF
     }
 
     foreach my $method (@methods) {
+        my $argv = '';
+        if ($method->{argv} && @{$method->{argv}}) {
+            $argv = '(' . join(', ', @{$method->{argv}}) . ')';
+        }
+
         $pod .= <<"EOF";
-=head2 C<$method>
+=head2 C<$method->{name}$argv>
 
 EOF
-        my ($old_method) = grep { $_->{method} eq $method } @old_methods;
+        my ($old_method) =
+          grep { $_->{method} eq $method->{name} } @old_methods;
         if ($old_method) {
             $old_method->{content} =~ s{^\r?\n*}{};
             $pod .= $old_method->{content};
         }
+    }
+
+    return $pod;
+}
+
+sub _render_inherited_methods {
+    my $self = shift;
+
+    my @methods = @{$self->{inherited_methods} || []};
+
+    my $pod = '';
+
+    if (grep { $_->{name} eq 'new' } @methods) {
+        @methods = ({name => 'new'}, grep { $_->{name} ne 'new' } @methods);
+    }
+
+    foreach my $method (@methods) {
+        my $argv = '';
+        if ($method->{argv} && @{$method->{argv}}) {
+            $argv = '(' . join(', ', @{$method->{argv}}) . ')';
+        }
+
+        $pod .= <<"EOF";
+=head2 C<$method->{name}$argv>
+
+EOF
     }
 
     return $pod;
@@ -164,7 +204,6 @@ sub _render_author {
     my $pod = '';
 
     $pod .= <<"EOF";
-
 $author, C<$email>
 
 EOF
@@ -185,19 +224,41 @@ warranty; without even the implied warranty of merchantability or fitness for
 a particular purpose.
 LICENSE
 
-    my $current_year = (localtime)[5] + 1900;
+    my $current_year = $self->_current_year;
     my $years = $self->{years} || $current_year;
+
+    if (
+        my ($section) =
+        grep { $_->{name} eq 'COPYRIGHT AND LICENSE' } @{$self->{pod}}
+      )
+    {
+        if (
+            $section->{content}
+            && (my ($year) =
+                $section->{content} =~ m/Copyright.*?(\d\d\d\d)(?:-\d\d\d\d)?,/)
+          )
+        {
+            if ($year ne $current_year) {
+                $years = "$year-$current_year";
+            }
+        }
+    }
 
     my $pod = '';
 
     $pod .= <<"EOF";
-
 Copyright (C) $years, $author.
 
 $license
 EOF
 
     return $pod;
+}
+
+sub _current_year {
+    my $self = shift;
+
+    return (localtime)[5] + 1900;
 }
 
 sub _insert_section_before {

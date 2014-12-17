@@ -3,6 +3,8 @@ package App::Podgrind::PerlParser;
 use strict;
 use warnings;
 
+use PPI::Document;
+
 sub new {
     my $class = shift;
 
@@ -44,8 +46,8 @@ sub get_pod_tree {
 sub get_package_name {
     my $self = shift;
 
-    return $self->{document}->find_first('PPI::Statement::Package')
-      ->namespace;
+    my $package = $self->{document}->find_first('PPI::Statement::Package');
+    return $package ? $package->namespace : undef;
 }
 
 sub get_end_section {
@@ -64,12 +66,52 @@ sub get_end_section {
 
 sub get_public_methods {
     my $self = shift;
+    my ($document) = @_;
+
+    $document ||= $self->{document};
 
     my $methods =
-      $self->{document}
-      ->find(sub { $_[1]->isa('PPI::Statement::Sub') and $_[1]->name });
+      $document->find(sub { $_[1]->isa('PPI::Statement::Sub') and $_[1]->name }
+      );
     return [] unless $methods && @$methods;
-    return [grep { !m/^_/ } map { $_->name } @$methods];
+
+    my @public =
+      grep { $_->name ne 'DESTROY' && $_->name ne 'AUTOLOAD' }
+      grep { $_->name !~ m/^_/ } @$methods;
+
+    my $result = [];
+    foreach my $public (@public) {
+        my $stmt =
+          $public->find(sub { $_[1]->isa('PPI::Statement::Variable') }) || [];
+
+        my ($unpack) = grep {
+            $_->find(
+                sub {
+                    $_[1]->isa('PPI::Token::Magic')
+                      and $_[1]->content eq '@_';
+                }
+              )
+        } @$stmt;
+
+        my @argv;
+        if ($unpack) {
+            my $list =
+              $unpack->find(sub { $_[1]->isa('PPI::Structure::List') });
+              if ($list) {
+                my $symbols =
+                  $list->[0]->find(sub { $_[1]->isa('PPI::Token::Symbol') });
+                @argv = grep { $_ ne '$self' } map { $_->content } @$symbols if $symbols;
+            }
+        }
+
+        push @$result,
+          {
+            name => $public->name,
+            argv => \@argv
+          };
+    }
+
+    return $result;
 }
 
 sub get_isa {
@@ -108,11 +150,35 @@ sub get_isa {
 sub get_inherited_methods {
     my $self = shift;
 
-    my $methods =
-      $self->{document}
-      ->find(sub { $_[1]->isa('PPI::Statement::Sub') and $_[1]->name });
-    return [] unless $methods && @$methods;
-    return [grep { !m/^_/ } map { $_->name } @$methods];
+    my $isa = $self->get_isa;
+    return [] unless $isa && @$isa;
+
+    my @isa_methods;
+    foreach my $isa_class (@$isa) {
+        eval "require $isa_class" or die $@;
+
+        $isa_class =~ s{::}{/}g;
+        my $path = $INC{$isa_class . '.pm'};
+
+        my $doc = PPI::Document->new($path, readonly => 1);
+
+        my $public_methods = $self->get_public_methods($doc);
+
+        foreach my $public_method (@$public_methods) {
+            push @isa_methods, $public_method
+              unless grep { $public_method->{name} eq $_->{name} } @isa_methods;
+        }
+    }
+
+    my @methods;
+
+    my $public_methods = $self->get_public_methods;
+    foreach my $isa_method (@isa_methods) {
+        push @methods, $isa_method
+          unless grep { $isa_method->{name} eq $_->{name} } @$public_methods;
+    }
+
+    return \@methods;
 }
 
 sub _parse_pod {
@@ -121,10 +187,16 @@ sub _parse_pod {
 
     my @sections;
     while ($pod =~ m/^=head1 (.*?)$(.*?)(?==head1|=cut)/msgc) {
-        push @sections, {
-            name => $1,
-            content => $2
-        }
+        my ($name, $content) = ($1, $2);
+
+        $content =~ s{^\r?\n*}{};
+        $content =~ s{\r?\n*$}{};
+
+        push @sections,
+          {
+            name    => $name,
+            content => "$content\n\n"
+          };
     }
 
     return [@sections];

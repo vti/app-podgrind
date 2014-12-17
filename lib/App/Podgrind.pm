@@ -43,13 +43,14 @@ sub process {
 
     if (!$self->{prune}) {
         my $renderer = App::Podgrind::PODRenderer->new(
-            package => $parser->get_package_name,
-            methods => $parser->get_public_methods,
-            isa     => $parser->get_isa,
-            pod     => $parser->get_pod_tree,
-            author  => $self->{config}->{author},
-            email   => $self->{config}->{email},
-            license => $self->{config}->{license}
+            package           => $parser->get_package_name,
+            methods           => $parser->get_public_methods,
+            inherited_methods => $parser->get_inherited_methods,
+            isa               => $parser->get_isa,
+            pod               => $parser->get_pod_tree,
+            author            => $self->{config}->{author},
+            email             => $self->{config}->{email},
+            license           => $self->{config}->{license}
         );
         $module .= "__END__\n" . $renderer->render;
     }

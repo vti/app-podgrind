@@ -117,7 +117,7 @@ EOF
 done_testing;
 
 sub _build_grind {
-    App::Podgrind->new(
+    return App::Podgrind->new(
         config => {author => 'Foo', email => 'foo@bar.com'},
         @_
     );
