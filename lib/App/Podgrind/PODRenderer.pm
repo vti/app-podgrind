@@ -33,6 +33,16 @@ sub render {
           {name => 'NAME', content => $self->_render_package_name};
     }
 
+    if (!grep { $_->{name} eq 'SYNOPSIS' } @$sections) {
+        $self->_insert_section_after('NAME',
+            {name => 'SYNOPSIS', content => ''});
+    }
+
+    if (!grep { $_->{name} eq 'DESCRIPTION' } @$sections) {
+        $self->_insert_section_after('SYNOPSIS',
+            {name => 'DESCRIPTION', content => ''});
+    }
+
     if (!grep { $_->{name} eq 'COPYRIGHT AND LICENSE' } @$sections) {
         push @$sections, {name => 'COPYRIGHT AND LICENSE'};
     }
@@ -130,7 +140,11 @@ sub _render_methods {
     my $pod = '';
 
     if (grep { $_->{name} eq 'new' } @methods) {
-        @methods = ({name => 'new'}, grep { $_->{name} ne 'new' } @methods);
+        @methods = (
+            {name => 'new'},
+            sort   { $a->{name} cmp $b->{name} }
+              grep { $_->{name} ne 'new' } @methods
+        );
     }
 
     my @old_methods;
@@ -177,7 +191,11 @@ sub _render_inherited_methods {
     my $pod = '';
 
     if (grep { $_->{name} eq 'new' } @methods) {
-        @methods = ({name => 'new'}, grep { $_->{name} ne 'new' } @methods);
+        @methods = (
+            {name => 'new'},
+            sort   { $a->{name} cmp $b->{name} }
+              grep { $_->{name} ne 'new' } @methods
+        );
     }
 
     foreach my $method (@methods) {

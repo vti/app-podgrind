@@ -38,6 +38,10 @@ __END__
 
 Foo - Module
 
+=head1 SYNOPSIS
+
+=head1 DESCRIPTION
+
 =head1 METHODS
 
 =head2 C<new>
