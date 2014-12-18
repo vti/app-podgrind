@@ -267,7 +267,7 @@ LICENSE
     my $pod = '';
 
     $pod .= <<"EOF";
-Copyright (C) $years, $author.
+Copyright (C) $years, $author
 
 $license
 EOF

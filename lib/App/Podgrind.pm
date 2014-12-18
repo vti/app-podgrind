@@ -28,7 +28,12 @@ sub process {
     my $input  = $params{input};
     my $output = $params{output};
 
-    $input = \*STDIN if !$input || $input eq '-';
+    my $stdin;
+    if (!$input || $input eq '-') {
+        $input = \*STDIN;
+        $stdin++;
+    }
+
     if (ref $input eq 'GLOB') {
         local $/;
         my $content = join '', <$input>;
@@ -64,6 +69,8 @@ sub process {
         }
     }
     elsif ($self->{inplace}) {
+        die "you cannot use --inplace with reading from STDIN\n" if $stdin;
+
         if ($self->{backup}) {
             copy($input, "$input.bak");
         }

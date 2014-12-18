@@ -7,7 +7,7 @@ use lib 't/perl_parser_t';
 
 use App::Podgrind::PerlParser;
 
-subtest 'parser package' => sub {
+subtest 'parses package' => sub {
     my $parser = _build_parser()->parse(\<<'EOF');
 package Foo;
 use base 'ParentClass';
@@ -68,6 +68,28 @@ EOF
 
     my $pod = $parser->get_pod_tree;
     is_deeply $pod, [{name => 'NAME', content => "Foo - is foo\n\n"}];
+};
+
+subtest 'parses package with heredocs' => sub {
+    my $parser = _build_parser()->parse(\<<'EOF');
+package Foo;
+use base 'ParentClass';
+sub new {
+    my $foo = <<'FOO';
+    hello there from heredoc
+FOO
+}
+EOF
+
+    my $code = $parser->get_code;
+    is $code, q{package Foo;
+use base 'ParentClass';
+sub new {
+    my $foo = <<'FOO';
+    hello there from heredoc
+FOO
+}
+};
 };
 
 done_testing;

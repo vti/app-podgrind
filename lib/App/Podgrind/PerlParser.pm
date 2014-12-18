@@ -8,7 +8,7 @@ use PPI::Document;
 sub new {
     my $class = shift;
 
-    my $self = {@_};
+    my $self = {};
     bless $self, $class;
 
     return $self;
@@ -19,6 +19,7 @@ sub parse {
     my ($input) = @_;
 
     $self->{document} = PPI::Document->new($input, readonly => 1);
+    die "can't parse $input" unless $self->{document};
 
     my $pod = $self->{document}->find(sub { $_[1]->isa('PPI::Token::Pod') });
     if ($pod && @$pod) {
@@ -34,7 +35,7 @@ sub parse {
 sub get_code {
     my $self = shift;
 
-    return $self->{document} . '';
+    return $self->{document}->serialize;
 }
 
 sub get_pod_tree {

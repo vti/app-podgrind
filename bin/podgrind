@@ -3,40 +3,52 @@
 use strict;
 use warnings;
 
-BEGIN {
-    use File::Basename ();
-    use File::Spec;
-    use Cwd ();
-    unshift @INC,
-      File::Spec->catfile(File::Basename::dirname(Cwd::realpath(__FILE__)),
-        '../lib');
-}
-
 use Getopt::Long;
+use File::Find ();
 use Pod::Usage;
 
 use App::Podgrind;
 
-my $inplace;
 my $backup;
+my $recursive;
 my $prune;
+my $inplace;
+my $verbose;
 my $help;
+my @inc;
 
+Getopt::Long::Configure('no_auto_abbrev', 'no_ignore_case', 'pass_through',
+    'bundling');
 GetOptions(
-    "inplace" => \$inplace,
-    "backup"  => \$backup,
-    "prune"   => \$prune,
-    "help|?"  => \$help
+    'backup'    => \$backup,
+    'recursive' => \$recursive,
+    'prune'     => \$prune,
+    'inplace'   => \$inplace,
+    'verbose'   => \$verbose,
+    'I=s@'      => \@inc,
+    'help|?'    => \$help
 ) or pod2usage(2);
 
 pod2usage(1) if $help;
 
 my $podgrind =
-  App::Podgrind->new(inplace => $inplace, backup => $backup, prune => $prune);
+  App::Podgrind->new(backup => $backup, prune => $prune, inplace => $inplace);
 
-my (@input) = @ARGV;
+my @input;
+foreach my $file (@ARGV) {
+    if (-d $file && $recursive) {
+        unshift @INC, $file;
+        File::Find::find(
+            sub { push @input, $File::Find::name if /\.p(?:m|l)$/; }, $file);
+    }
+    else {
+        push @input, $file;
+    }
+}
+
+unshift @INC, $_ for @inc;
 
 for my $input (@input) {
-    warn "processing '$input'...\n";
+    warn "Processing $input...\n" if $verbose;
     $podgrind->process(input => $input);
 }
