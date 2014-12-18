@@ -20,13 +20,13 @@ my @inc;
 Getopt::Long::Configure('no_auto_abbrev', 'no_ignore_case', 'pass_through',
     'bundling');
 GetOptions(
-    'backup'    => \$backup,
-    'recursive' => \$recursive,
-    'prune'     => \$prune,
-    'inplace'   => \$inplace,
-    'verbose'   => \$verbose,
-    'I=s@'      => \@inc,
-    'help|?'    => \$help
+    'backup'      => \$backup,
+    'r|recursive' => \$recursive,
+    'prune'       => \$prune,
+    'i|inplace'   => \$inplace,
+    'v|verbose'   => \$verbose,
+    'I=s@'        => \@inc,
+    'help|?'      => \$help
 ) or pod2usage(2);
 
 pod2usage(1) if $help;

@@ -3,6 +3,8 @@ package App::Podgrind;
 use strict;
 use warnings;
 
+our $VERSION = '0.01';
+
 use File::Copy;
 use File::Spec;
 use PPI::Document;
