@@ -73,7 +73,7 @@ sub render {
         }
     }
 
-    my $pod = "=pod\n\n";
+    my $pod = "=pod\n\n=encoding utf-8\n\n";
 
     foreach my $section (@$sections) {
         $pod .= '=head1 ' . $section->{name} . "\n\n";
