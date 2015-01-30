@@ -224,7 +224,7 @@ sub _render_author {
     my $pod = '';
 
     $pod .= <<"EOF";
-$author, C<$email>
+$author, E<lt>${email}E<gt>
 
 EOF
 

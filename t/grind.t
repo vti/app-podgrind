@@ -53,7 +53,7 @@ Foo - Module
 
 =head1 AUTHOR
 
-Foo, C<foo\@bar.com>
+Foo, E<lt>foo\@bar.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
