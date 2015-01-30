@@ -102,7 +102,7 @@ subtest 'renders merged methods' => sub {
             },
             {
                 name => 'bar',
-                argv => []
+                argv => [qw/$param/]
             },
             {
                 name => 'baz',
@@ -117,7 +117,7 @@ subtest 'renders merged methods' => sub {
 
 Foo
 
-=head2 C<bar>
+=head2 C<bar($param)>
 
 Bar
 
@@ -134,7 +134,7 @@ EOF
 
 Foo
 
-=head2 C<bar>
+=head2 C<bar($param)>
 
 Bar
 

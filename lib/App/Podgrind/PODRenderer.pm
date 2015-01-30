@@ -151,7 +151,7 @@ sub _render_methods {
     if ($self->{pod}) {
         if (my ($methods) = grep { $_->{name} eq 'METHODS' } @{$self->{pod}}) {
             while ($methods->{content} =~
-                m/^=head2 C<(.*?)>(.*?)(?==head2|\z)/msgc)
+                m/^=head2 C<(.*?)(?:\(.*?\))?>(.*?)(?==head2|\z)/msgc)
             {
                 push @old_methods,
                   {
