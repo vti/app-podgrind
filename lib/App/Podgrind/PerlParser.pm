@@ -167,6 +167,8 @@ sub get_inherited_methods {
 
     my @isa_methods;
     foreach my $isa_class (@$isa) {
+        next if $isa_class eq 'Exporter';
+
         eval "require $isa_class" or die $@;
 
         $isa_class =~ s{::}{/}g;
