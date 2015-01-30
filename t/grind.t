@@ -5,6 +5,7 @@ use Test::More;
 use Test::Fatal;
 use Test::Differences;
 
+use Time::Piece;
 use App::Podgrind;
 
 subtest 'creates pod from nothing' => sub {
@@ -23,7 +24,9 @@ EOF
     my $output = '';
     $grind->process(input => \$input, output => \$output);
 
-    eq_or_diff($output, <<'EOF');
+    my $year = Time::Piece->new->year;
+
+    eq_or_diff($output, <<"EOF");
 package Foo;
 
 sub new {}
@@ -50,11 +53,11 @@ Foo - Module
 
 =head1 AUTHOR
 
-Foo, C<foo@bar.com>
+Foo, C<foo\@bar.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2014, Foo
+Copyright (C) $year, Foo
 
 This program is free software, you can redistribute it and/or modify it under
 the terms of the Artistic License version 2.0.
