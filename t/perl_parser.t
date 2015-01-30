@@ -92,6 +92,55 @@ FOO
 };
 };
 
+subtest 'parses existing pod' => sub {
+    my $parser = _build_parser()->parse(\<<'EOF');
+package Foo;
+sub new {
+    my $class = shift;
+
+    return $self;
+}
+
+sub foo {}
+sub bar {}
+
+1;
+__END__
+=pod
+
+=head1 NAME
+
+Foo - is foo
+
+=head1 METHODS
+
+=head2 C<foo>
+
+Foo
+
+=head2 C<bar>
+
+Bar
+
+=cut
+EOF
+
+    my $pod = $parser->get_pod_tree;
+    is_deeply $pod,
+      [
+        {name => 'NAME',    content => "Foo - is foo\n\n"},
+        {name => 'METHODS', content => <<'EOF'}];
+=head2 C<foo>
+
+Foo
+
+=head2 C<bar>
+
+Bar
+
+EOF
+};
+
 done_testing;
 
 sub _build_parser {

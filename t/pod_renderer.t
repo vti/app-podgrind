@@ -59,20 +59,20 @@ subtest 'fixes year loosly' => sub {
     like $renderer->render, qr/2010-2014/;
 };
 
-subtest 'renderes methods' => sub {
+subtest 'renders methods' => sub {
     my $renderer = _build_renderer(
         methods => [
             {
-                name    => 'foo',
+                name => 'foo',
                 argv => []
             },
             {
-                name    => 'bar',
+                name => 'bar',
                 argv => [qw/$in/]
             },
             {
                 name    => 'commented',
-                argv => [],
+                argv    => [],
                 comment => 'Not a good method'
             }
         ]
@@ -93,12 +93,62 @@ Not a good method
 EOF
 };
 
+subtest 'renders merged methods' => sub {
+    my $renderer = _build_renderer(
+        methods => [
+            {
+                name => 'foo',
+                argv => []
+            },
+            {
+                name => 'bar',
+                argv => []
+            },
+            {
+                name => 'baz',
+                argv => [],
+            }
+        ],
+        pod => [
+            {
+                name    => 'METHODS',
+                content => <<'EOF'
+=head2 C<foo>
+
+Foo
+
+=head2 C<bar>
+
+Bar
+
+EOF
+            }
+        ]
+    );
+
+    my ($methods) = $renderer->render =~ m/(=head1 METHODS.*?)=head1/ms;
+    eq_or_diff $methods, <<'EOF';
+=head1 METHODS
+
+=head2 C<foo>
+
+Foo
+
+=head2 C<bar>
+
+Bar
+
+=head2 C<baz>
+
+EOF
+};
+
 done_testing;
 
 sub _build_renderer {
     my $renderer = App::Podgrind::PODRenderer->new(
         package => 'Foo',
-        config => {author => 'Foo', email => 'foo@bar.com'},
+        config  => {author => 'Foo', email => 'foo@bar.com'},
         @_
     );
     $renderer = Test::MonkeyMock->new($renderer);
